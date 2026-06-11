@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Token Meter</title>
+<style>
+:root {
+  --bg: #0c0a06;
+  --panel: #14110a;
+  --panel-2: #1c1810;
+  --bezel: #2a2418;
+  --ink: #d8c898;
+  --ink-soft: #908070;
+  --rule: #3a3220;
+  --amber: #e8a040;
+  --amber-deep: #ffb858;
+  --amber-dim: #8a6028;
+  --lime: #a8d860;
+  --lime-deep: #c0e878;
+  --red: #e85040;
+  --code-bg: #050402;
+  --gauge-bg: #1a1408;
+}
+[data-theme="light"] {
+  --bg: #ebe6d8;
+  --panel: #f5f1e4;
+  --panel-2: #ffffff;
+  --bezel: #d8d0bc;
+  --ink: #2a2418;
+  --ink-soft: #6a6048;
+  --rule: #c0b89c;
+  --amber: #a06010;
+  --amber-deep: #804808;
+  --amber-dim: #c89058;
+  --lime: #4a7820;
+  --lime-deep: #2a5810;
+  --red: #8b1a10;
+  --code-bg: #f0ecdc;
+  --gauge-bg: #e8e0c8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 1.75rem 1rem;
+  line-height: 1.55;
+}
+.wrap { max-width: 1300px; margin: 0 auto; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--amber);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--amber);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  text-transform: uppercase;
+}
+.subtitle {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-top: 0.25rem;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.04em;
+}
+.theme-btn {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.theme-btn:hover { border-color: var(--amber); color: var(--amber); }
+.lede {
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  max-width: 70ch;
+}
+.input-section {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: 3px;
+}
+.input-section h2 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  margin-bottom: 0.85rem;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+textarea {
+  width: 100%;
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  padding: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  resize: vertical;
+  min-height: 200px;
+  border-radius: 2px;
+}
+textarea:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+.controls {
+  margin-top: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.live-counter {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.live-counter strong {
+  color: var(--lime);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.btn-row {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+button {
+  font-family: ui-monospace, monospace;
+  font-size: 0.78rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+button.primary {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--bg);
+  font-weight: 700;
+}
+[data-theme="dark"] button.primary {
+  color: var(--bg) !important;
+}
+button.primary:hover { background: var(--amber-deep); }
+button:hover { border-color: var(--amber); }
+.cluster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.gauge-card {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1.1rem;
+  position: relative;
+}
+.gauge-card::before {
+  content: "";
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lime);
+  box-shadow: 0 0 6px var(--lime);
+}
+.gauge-card.warn::before { background: var(--amber-deep); box-shadow: 0 0 6px var(--amber-deep); }
+.gauge-card.over::before { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.gauge-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.85rem;
+}
+.gauge-model {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--amber);
+  font-family: ui-monospace, monospace;
+}
+.gauge-context {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.04em;
+}
+.gauge-svg-wrap {
+  position: relative;
+  margin: 0.5rem 0;
+}
+.gauge-svg {
+  width: 100%;
+  height: 110px;
+  display: block;
+}
+.gauge-readout {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+.gauge-readout-value {
+  font-family: ui-monospace, monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--lime);
+  line-height: 1;
+}
+.gauge-card.warn .gauge-readout-value { color: var(--amber-deep); }
+.gauge-card.over .gauge-readout-value { color: var(--red); }
+.gauge-readout-label {
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.15rem;
+  font-family: ui-monospace, monospace;
+}
+.gauge-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-family: ui-monospace, monospace;
+  margin-top: 0.5rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--rule);
+}
+.gauge-stats dt { color: var(--ink-soft); }
+.gauge-stats dd { text-align: right; color: var(--ink); }
+.gauge-card.over .gauge-stats dd:last-of-type { color: var(--red); font-weight: 700; }
+.notes-section {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 1.1rem;
+  margin-top: 1.25rem;
+  border-radius: 3px;
+}
+.notes-section h2 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+  margin-bottom: 0.85rem;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+.note-list {
+  list-style: none;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.note-list li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.note-list li:last-child { border-bottom: none; }
+.note-list li strong { color: var(--amber); font-family: ui-monospace, monospace; font-size: 0.78rem; }
+footer {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+footer a { color: var(--amber); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 700px) {
+  body { padding: 1rem 0.75rem; }
+  h1 { font-size: 1.15rem; }
+  .controls { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Prompt Token Meter</h1>
+    <div class="subtitle">// estimate token usage across major models, see context budget at a glance</div>
+  </div>
+  <button class="theme-btn" id="theme-toggle" type="button">Light</button>
+</header>
+
+<p class="lede">Paste a prompt. The tool estimates token count using a heuristic and shows usage as a gauge against each model's context window. Heuristic only — actual tokens depend on each model's tokenizer (BPE for Claude, tiktoken for OpenAI, SentencePiece for Gemini, etc.). Useful for budget planning, not for billing-precise counts.</p>
+
+<div class="input-section">
+  <h2>Prompt</h2>
+  <textarea id="prompt-input" placeholder="Paste your prompt here..." spellcheck="false"></textarea>
+  <div class="controls">
+    <div class="live-counter">
+      <span>chars: <strong id="char-count">0</strong></span>
+      &nbsp;&nbsp;
+      <span>est. tokens: <strong id="token-count">0</strong></span>
+    </div>
+    <div class="btn-row">
+      <button class="primary" id="measure-btn" type="button">Measure</button>
+      <button id="sample-btn" type="button">Sample</button>
+      <button id="clear-btn" type="button">Clear</button>
+    </div>
+  </div>
+</div>
+
+<div class="cluster-grid" id="cluster"></div>
+
+<div class="notes-section">
+  <h2>Notes on the estimate</h2>
+  <ul class="note-list">
+    <li><strong>Heuristic:</strong> ~4 chars per token for English prose, weighted up for whitespace and punctuation. Real tokenizers vary.</li>
+    <li><strong>Code is denser:</strong> source code typically uses 3.0-3.5 chars per token. Long identifiers and operators tokenize differently from prose.</li>
+    <li><strong>Non-English:</strong> CJK and many other languages use significantly more tokens per character. The estimate undercounts here.</li>
+    <li><strong>Output budget:</strong> the context window is shared between input and output. If you're asking for a 20K-token response, your input budget is correspondingly smaller.</li>
+    <li><strong>Vision / files:</strong> images and document attachments consume tokens too. This tool only measures text.</li>
+  </ul>
+</div>
+
+<footer>
+  <div>Prompt Token Meter. MIT licensed. <a href="https://github.com/0xelitesystem/prompt-token-meter" target="_blank" rel="noopener">View source</a>.</div>
+  <div>Heuristic estimate. Browser-based. No API calls.</div>
+</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const themeBtn = $("theme-toggle");
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  themeBtn.textContent = t === "dark" ? "Light" : "Dark";
+}
+themeBtn.addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme") || "dark";
+  setTheme(cur === "dark" ? "light" : "dark");
+});
+
+// Models with context windows. Numbers are approximate as of recent releases.
+const MODELS = [
+  { name: "Claude Opus 4.7", context: 200000 },
+  { name: "Claude Sonnet 4.6", context: 200000 },
+  { name: "Claude Haiku 4.5", context: 200000 },
+  { name: "GPT-5", context: 256000 },
+  { name: "GPT-4o", context: 128000 },
+  { name: "Gemini 2.5 Pro", context: 1000000 },
+  { name: "Gemini 2.5 Flash", context: 1000000 },
+  { name: "Llama 3.3 70B", context: 128000 },
+  { name: "DeepSeek V3", context: 128000 },
+  { name: "Mistral Large 2", context: 128000 },
+];
+
+function estimateTokens(text) {
+  if (!text) return 0;
+  // Heuristic: words contribute roughly 1.3 tokens each (BPE typically),
+  // plus punctuation and whitespace overhead.
+  const words = text.match(/\S+/g) || [];
+  const punct = (text.match(/[.,;:!?\-()[\]{}'"]/g) || []).length;
+  const whitespace = (text.match(/\s/g) || []).length;
+  // Adjust for code-density: more symbols / fewer spaces = more tokens per char
+  const symbolRatio = (text.match(/[<>={}()[\];,.:'"]/g) || []).length / Math.max(text.length, 1);
+  const isCodeLike = symbolRatio > 0.05;
+  const wordTokens = isCodeLike ? words.length * 1.7 : words.length * 1.3;
+  const punctTokens = punct * 0.4;
+  const whitespaceTokens = whitespace * 0.05;
+  return Math.max(1, Math.round(wordTokens + punctTokens + whitespaceTokens));
+}
+
+function makeGaugeSvg(percent) {
+  // Semi-circle gauge SVG
+  const cx = 100, cy = 95, r = 75;
+  const startAngle = 180; // left
+  const endAngle = 0;     // right
+  const angleRange = startAngle - endAngle;
+  const fillAngle = startAngle - (angleRange * Math.min(percent, 100) / 100);
+
+  const polarToCart = (cx, cy, r, angleDeg) => {
+    const rad = (angleDeg) * Math.PI / 180;
+    return [cx + r * Math.cos(rad), cy - r * Math.sin(rad)];
+  };
+
+  const [bgX1, bgY1] = polarToCart(cx, cy, r, startAngle);
+  const [bgX2, bgY2] = polarToCart(cx, cy, r, endAngle);
+  const [fillX2, fillY2] = polarToCart(cx, cy, r, fillAngle);
+
+  const fillLargeArc = (startAngle - fillAngle) > 180 ? 1 : 0;
+
+  // Tick marks
+  const ticks = [];
+  for (let p = 0; p <= 100; p += 10) {
+    const a = startAngle - (angleRange * p / 100);
+    const inner = polarToCart(cx, cy, r - 6, a);
+    const outer = polarToCart(cx, cy, r, a);
+    ticks.push(`<line x1="${inner[0]}" y1="${inner[1]}" x2="${outer[0]}" y2="${outer[1]}" stroke="var(--rule)" stroke-width="1.5"/>`);
+  }
+
+  let color = "var(--lime)";
+  if (percent >= 100) color = "var(--red)";
+  else if (percent >= 70) color = "var(--amber-deep)";
+
+  return `
+    <svg class="gauge-svg" viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg">
+      <path d="M ${bgX1} ${bgY1} A ${r} ${r} 0 0 1 ${bgX2} ${bgY2}"
+            stroke="var(--gauge-bg)" stroke-width="8" fill="none" stroke-linecap="round"/>
+      ${percent > 0 ? `<path d="M ${bgX1} ${bgY1} A ${r} ${r} 0 ${fillLargeArc} 1 ${fillX2} ${fillY2}"
+                              stroke="${color}" stroke-width="8" fill="none" stroke-linecap="round"/>` : ""}
+      ${ticks.join("")}
+    </svg>
+  `;
+}
+
+function fmt(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
+  if (n >= 1000) return (n / 1000).toFixed(1) + "k";
+  return String(n);
+}
+
+function render() {
+  const text = $("prompt-input").value;
+  const tokens = estimateTokens(text);
+  $("char-count").textContent = fmt(text.length);
+  $("token-count").textContent = fmt(tokens);
+
+  const cluster = $("cluster");
+  cluster.innerHTML = "";
+  for (const m of MODELS) {
+    const pct = (tokens / m.context) * 100;
+    let cls = "";
+    if (pct >= 100) cls = "over";
+    else if (pct >= 70) cls = "warn";
+    const remaining = Math.max(0, m.context - tokens);
+    cluster.innerHTML += `
+      <div class="gauge-card ${cls}">
+        <div class="gauge-head">
+          <div class="gauge-model">${m.name}</div>
+          <div class="gauge-context">ctx ${fmt(m.context)}</div>
+        </div>
+        <div class="gauge-svg-wrap">
+          ${makeGaugeSvg(pct)}
+          <div class="gauge-readout">
+            <div class="gauge-readout-value">${pct.toFixed(1)}%</div>
+            <div class="gauge-readout-label">used</div>
+          </div>
+        </div>
+        <dl class="gauge-stats">
+          <dt>used</dt><dd>${fmt(tokens)} tokens</dd>
+          <dt>${pct >= 100 ? "over by" : "remaining"}</dt><dd>${pct >= 100 ? fmt(tokens - m.context) : fmt(remaining)} tokens</dd>
+        </dl>
+      </div>
+    `;
+  }
+}
+
+$("prompt-input").addEventListener("input", () => {
+  const t = $("prompt-input").value;
+  $("char-count").textContent = fmt(t.length);
+  $("token-count").textContent = fmt(estimateTokens(t));
+});
+
+$("measure-btn").addEventListener("click", render);
+
+$("clear-btn").addEventListener("click", () => {
+  $("prompt-input").value = "";
+  $("char-count").textContent = "0";
+  $("token-count").textContent = "0";
+  $("cluster").innerHTML = "";
+});
+
+$("sample-btn").addEventListener("click", () => {
+  $("prompt-input").value = `You are a senior software engineer reviewing a pull request.
+
+Review the diff below. Identify:
+1. Bugs or correctness issues
+2. Security flags (input validation, auth, secrets, injection vectors)
+3. Tests: are new ones meaningful or do they just exercise the code without verifying behavior
+4. Style/idiom issues that matter (skip whitespace and naming nitpicks)
+5. Things missing that probably should be there (error handling, logging, migrations)
+
+Output structure:
+- Verdict: APPROVE / REQUEST CHANGES / NEEDS DISCUSSION
+- Top 3 issues (most important first, with file:line)
+- Other observations (less critical)
+- Questions for the author
+
+Be specific. "X is bad" is not feedback. "Line 42: X is bad because Y; suggest Z" is feedback.
+
+Diff:
+\`\`\`
+diff --git a/src/auth.ts b/src/auth.ts
+index 1234567..89abcde 100644
+--- a/src/auth.ts
++++ b/src/auth.ts
+@@ -10,7 +10,7 @@ export function validateToken(token: string) {
+   const decoded = jwt.decode(token);
+-  if (!decoded || !decoded.userId || decoded.exp < Date.now()/1000) return null;
++  if (!decoded) return null;
+   return decoded;
+ }
+\`\`\``;
+  render();
+});
+
+setTheme("dark");
+render();
+</script>
+</body>
+</html>
