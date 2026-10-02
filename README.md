@@ -17,7 +17,7 @@ Each gauge shows:
 
 When you exceed a model's context, the gauge goes red and reports how many tokens you're over.
 
-## Why
+## Why this exists
 
 Knowing roughly how many tokens your prompt will consume, and how that fits within different models' context budgets, is useful for:
 
@@ -26,7 +26,7 @@ Knowing roughly how many tokens your prompt will consume, and how that fits with
 - Comparing context-budget-per-dollar across models
 - Understanding why your "agentic loop" is starting to drop earlier instructions
 
-The gauges make this comparison spatial. You see at a glance which models will fit, which are tight, and which won't take it.
+The gauges make this comparison spatial. You see at a glance which models will fit, which are tight, and which won't take it. It is one HTML file with no tracking and no dependencies, MIT licensed.
 
 ## Heuristic, not exact
 
@@ -61,7 +61,7 @@ The list reflects current widely-available models. Update as they ship:
 
 ## Privacy
 
-All token estimation runs in your browser. The prompt you paste does not leave your device.
+All token estimation runs in your browser. The prompt you paste does not leave your device and is not stored. The page makes no network requests. The only thing saved is your light or dark theme choice, kept in localStorage under the key `theme`.
 
 ## Run locally
 
